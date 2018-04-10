@@ -1,0 +1,101 @@
+<html>
+<head>
+	<title>MAIA Proof of Concept</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<script type="text/javascript" src="./../../lib/iota.min.js"></script>
+	<script type="text/javascript" src="./../../lib/mam.web.js"></script>
+	<script type="text/javascript" src="./../../dist/maia.web.js"></script>
+	<style>
+		.center { text-align: center }
+		label { display: block; padding-top: 0.75rem }
+		input[type="text"], textarea { width: 100% }
+		#button-bar { margin: 1rem }
+		button { padding: .35rem; margin: 0 .25rem }
+		p.warning { color: red; font-weight: bold }
+	</style>
+	<script type="text/javascript">
+		const provider = 'https://testnet140.tangle.works:443';
+		const iota = createIOTAProvider(provider);
+		
+		let form = {address:'', seed:'', maia:'' }
+		let output;
+		
+		function prepare() {
+			form.address = document.getElementById('address').value;
+			form.seed = document.getElementById('seed').value;
+			form.maia = document.getElementById('maia').value;
+			document.getElementById('result').value = '';
+		}
+
+		function notEmpty(field) {
+			if (form[field] == '') {
+				alert('Empty ' + field);
+				return false;
+			}
+			return true;
+		}
+		
+		function setResult(result) {
+			document.getElementById('result').value = result;
+		}
+		
+		function appendResult(result) {
+			document.getElementById('result').value = document.getElementById('result').value + result;
+		}
+
+		async function publish() {
+			prepare();
+			if (!notEmpty('address')) return;
+		
+			setResult('Generate MAIA for address => ' + form.address + '\n\n');
+			let result = await publishMAIA(iota, form.address);
+
+			appendResult('seed: ' + result.state.seed + '\n');
+			appendResult('maia: ' + result.root + '\n');
+		}
+
+		async function obtain() {
+			prepare();
+			if (!notEmpty('maia')) return;
+			
+			setResult('Obtain address from MAIA => ' + form.maia + '\n\n');
+			let result = await obtainMAIA(iota, form.maia);
+			appendResult(result);
+		}
+
+		async function update() {
+			prepare();
+			if (!notEmpty('address')) return;
+			if (!notEmpty('seed')) return;
+			if (!notEmpty('maia')) return;
+
+			setResult('Update MAIA address => ' + form.maia + '\n\n');
+			let result = await updateMAIA(iota, form.maia, form.seed, form.address);
+			appendResult('Updated!');
+		}
+		
+		function clean() {
+			document.getElementById('address').value = '';
+			document.getElementById('maia').value = '';
+			document.getElementById('seed').value = '';
+			prepare();
+		}
+		
+	</script>
+</head>
+<body>
+	<h1 class="center">MAIA</h1>
+	<h2 class="center">Masked Authenticated IOTA Address</h2>
+	<label for="address">Address</label><input id="address" name="address" type="text">
+	<label for="seed">Seed</label><input id="seed" name="seed" type="text">
+	<label for="maia">MAIA</label><input id="maia" name="maia" type="text">
+	<div id="button-bar" class="center">
+		<button onclick=publish()>Publish</button>
+		<button onclick=obtain()>Obtain</button>
+		<button onclick=update()>Update</button>
+		<button onclick=clean()>Clean</button>
+	</div>
+	<textarea id="result" name="result" rows="5"></textarea>
+	<p class="warning center">Warning: Inputs are not validated<p>
+</body>
+</html>

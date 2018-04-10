@@ -3,8 +3,8 @@
  */
 
 let IOTA = require('iota.lib.js');
-let MAM = require('../lib/mam.node.js');
-let MAIA = require('../maia.js');
+let MAM = require('../../lib/mam.node.js');
+let MAIA = require('../../dist/maia.node.js');
 
 const provider = 'https://testnet140.tangle.works:443';
 const iota = new IOTA({ provider })
