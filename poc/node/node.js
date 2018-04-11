@@ -4,13 +4,12 @@
 
 let IOTA = require('iota.lib.js');
 let MAM = require('../../lib/mam.node.js');
-let MAIA = require('../../dist/maia.node.js');
+let MAIA = require('../../dist/maia.js');
 
-const provider = 'https://testnet140.tangle.works:443';
-const iota = new IOTA({ provider })
+let instance = new MAIA.MAIA('https://testnet140.tangle.works:443');
 
 const testGenerate = async address => {
-	let message = await MAIA.publish(iota, address);
+	let message = await instance.publish(address);
 	let seed = message.state.seed;
 	let maia = message.root;
 	
@@ -20,12 +19,12 @@ const testGenerate = async address => {
 }
 
 const testObtain = async maia => {
-	let result = await MAIA.obtain(iota, maia);
+	let result = await instance.obtain(maia);
 	console.log('address: ' + result);
 }
 
 async function testUpdate(maia, seed, address) {
-	await MAIA.update(iota, maia, seed, address);
+	await instance.update(maia, seed, address);
 }
 
 async function test() {

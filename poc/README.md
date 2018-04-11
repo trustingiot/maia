@@ -24,14 +24,14 @@
     cp ../lib/iota-bindings-emscripten.wasm <webserver>/maia/lib/
     cp ../lib/mam.web.js <webserver>/maia/lib/
     cp ../lib/iota.min.js <webserver>/maia/lib/
-    cp ../dist/maia.web.js <webserver>/maia/lib/
+    cp ../dist/maia.js <webserver>/maia/lib/
 
 3.Modify maia.html
 
     ...
 	<script type="text/javascript" src="../../lib/iota.min.js"></script>  <!-- ./lib/iota.min.js -->
 	<script type="text/javascript" src="../../lib/mam.web.js"></script>   <!-- ./lib/mam.web.js  -->
-	<script type="text/javascript" src="../../dist/maia.web.js"></script> <!-- ./lib/maia.web.js -->
+	<script type="text/javascript" src="../../dist/maia.js"></script>     <!-- ./lib/maia.js     -->
     ...
 
 4.Modify mam.web.js

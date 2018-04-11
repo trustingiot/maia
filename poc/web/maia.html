@@ -4,7 +4,7 @@
 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<script type="text/javascript" src="./../../lib/iota.min.js"></script>
 	<script type="text/javascript" src="./../../lib/mam.web.js"></script>
-	<script type="text/javascript" src="./../../dist/maia.web.js"></script>
+	<script type="text/javascript" src="./../../dist/maia.js"></script>
 	<style>
 		.center { text-align: center }
 		label { display: block; padding-top: 0.75rem }
@@ -14,8 +14,7 @@
 		p.warning { color: red; font-weight: bold }
 	</style>
 	<script type="text/javascript">
-		const provider = 'https://testnet140.tangle.works:443';
-		const iota = createIOTAProvider(provider);
+		const instance = new MAIA('https://testnet140.tangle.works:443');
 		
 		let form = {address:'', seed:'', maia:'' }
 		let output;
@@ -48,7 +47,7 @@
 			if (!notEmpty('address')) return;
 		
 			setResult('Generate MAIA for address => ' + form.address + '\n\n');
-			let result = await publishMAIA(iota, form.address);
+			let result = await instance.publish(form.address);
 
 			appendResult('seed: ' + result.state.seed + '\n');
 			appendResult('maia: ' + result.root + '\n');
@@ -59,7 +58,7 @@
 			if (!notEmpty('maia')) return;
 			
 			setResult('Obtain address from MAIA => ' + form.maia + '\n\n');
-			let result = await obtainMAIA(iota, form.maia);
+			let result = await instance.obtain(form.maia);
 			appendResult(result);
 		}
 
@@ -70,7 +69,7 @@
 			if (!notEmpty('maia')) return;
 
 			setResult('Update MAIA address => ' + form.maia + '\n\n');
-			let result = await updateMAIA(iota, form.maia, form.seed, form.address);
+			let result = await instance.update(form.maia, form.seed, form.address);
 			appendResult('Updated!');
 		}
 		
