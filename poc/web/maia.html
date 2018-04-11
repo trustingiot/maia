@@ -42,12 +42,12 @@
 			document.getElementById('result').value = document.getElementById('result').value + result;
 		}
 
-		async function publish() {
+		async function generate() {
 			prepare();
 			if (!notEmpty('address')) return;
 		
 			setResult('Generate MAIA for address => ' + form.address + '\n\n');
-			let result = await instance.publish(form.address);
+			let result = await instance.generate(form.address, (form.seed == '') ? null : form.seed);
 
 			appendResult('seed: ' + result.state.seed + '\n');
 			appendResult('maia: ' + result.root + '\n');
@@ -89,7 +89,7 @@
 	<label for="seed">Seed</label><input id="seed" name="seed" type="text">
 	<label for="maia">MAIA</label><input id="maia" name="maia" type="text">
 	<div id="button-bar" class="center">
-		<button onclick=publish()>Publish</button>
+		<button onclick=generate()>Generate</button>
 		<button onclick=obtain()>Obtain</button>
 		<button onclick=update()>Update</button>
 		<button onclick=clean()>Clean</button>

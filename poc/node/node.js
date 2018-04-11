@@ -9,7 +9,7 @@ let MAIA = require('../../dist/maia.js');
 let instance = new MAIA.MAIA('https://testnet140.tangle.works:443');
 
 const testGenerate = async address => {
-	let message = await instance.publish(address);
+	let message = await instance.generate(address);
 	let seed = message.state.seed;
 	let maia = message.root;
 	
@@ -24,14 +24,15 @@ const testObtain = async maia => {
 }
 
 async function testUpdate(maia, seed, address) {
-	await instance.update(maia, seed, address);
+	await instance.update(seed, maia, address);
 }
 
 async function test() {
 	let address = 'KIFEHFFMQDPHLHGURUXDZGTJVDZMDLCFSVXXRNXKCIXJZSJNBWULBLQXYSNZNVGIJXVCITXREHUUKCHGDCSEBGYDEB';
+	let seed = null; // Modify if you want to generate MAIA with a given seed
 	
 	console.log('Generate new maia address for "' + address + '".');
-	let message = await testGenerate(address);
+	let message = await testGenerate(address, seed);
 	let maia = message.root;
 	
 	console.log('\nObtain maia address "' + maia + '".');
