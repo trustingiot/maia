@@ -11,82 +11,88 @@
 		input[type="text"], textarea { width: 100% }
 		#button-bar { margin: 1rem }
 		button { padding: .35rem; margin: 0 .25rem }
+		button.random { padding: .25rem; margin: .25rem 0; width: 100% }
 		p.warning { color: red; font-weight: bold }
 	</style>
 	<script type="text/javascript">
-		const instance = new MAIA('https://testnet140.tangle.works:443');
-		
+		const instance = new MAIA('https://testnet140.tangle.works:443')
+		console.log(MAIA.keyGen())
+
 		let form = {address:'', seed:'', maia:'' }
-		let output;
-		
+		let output
+
 		function prepare() {
-			form.address = document.getElementById('address').value;
-			form.seed = document.getElementById('seed').value;
-			form.maia = document.getElementById('maia').value;
-			document.getElementById('result').value = '';
+			form.address = document.getElementById('address').value
+			form.seed = document.getElementById('seed').value
+			form.maia = document.getElementById('maia').value
+			document.getElementById('result').value = ''
 		}
 
 		function notEmpty(field) {
 			if (form[field] == '') {
-				alert('Empty ' + field);
-				return false;
+				alert('Empty ' + field)
+				return false
 			}
-			return true;
+			return true
 		}
-		
+
 		function setResult(result) {
-			document.getElementById('result').value = result;
+			document.getElementById('result').value = result
 		}
-		
+
 		function appendResult(result) {
-			document.getElementById('result').value = document.getElementById('result').value + result;
+			document.getElementById('result').value = document.getElementById('result').value + result
 		}
 
 		async function generate() {
-			prepare();
-			if (!notEmpty('address')) return;
-		
-			setResult('Generate MAIA for address => ' + form.address + '\n\n');
-			let result = await instance.generate(form.address, (form.seed == '') ? null : form.seed);
+			prepare()
+			if (!notEmpty('address')) return
 
-			appendResult('seed: ' + result.state.seed + '\n');
-			appendResult('maia: ' + result.root + '\n');
+			setResult('Generate MAIA for address => ' + form.address + '\n\n')
+			let result = await instance.generate(form.address, (form.seed == '') ? null : form.seed)
+
+			appendResult('seed: ' + result.state.seed + '\n')
+			appendResult('maia: ' + result.root + '\n')
 		}
 
 		async function obtain() {
-			prepare();
-			if (!notEmpty('maia')) return;
-			
-			setResult('Obtain address from MAIA => ' + form.maia + '\n\n');
-			let result = await instance.obtain(form.maia);
-			appendResult(result);
+			prepare()
+			if (!notEmpty('maia')) return
+
+			setResult('Obtain address from MAIA => ' + form.maia + '\n\n')
+			let result = await instance.obtain(form.maia)
+			appendResult(result)
 		}
 
 		async function update() {
-			prepare();
-			if (!notEmpty('address')) return;
-			if (!notEmpty('seed')) return;
-			if (!notEmpty('maia')) return;
+			prepare()
+			if (!notEmpty('address')) return
+			if (!notEmpty('seed')) return
+			if (!notEmpty('maia')) return
 
-			setResult('Update MAIA address => ' + form.maia + '\n\n');
-			let result = await instance.update(form.maia, form.seed, form.address);
-			appendResult('Updated!');
+			setResult('Update MAIA address => ' + form.maia + '\n\n')
+			let result = await instance.update(form.maia, form.seed, form.address)
+			appendResult('Updated!')
 		}
-		
+
 		function clean() {
-			document.getElementById('address').value = '';
-			document.getElementById('maia').value = '';
-			document.getElementById('seed').value = '';
-			prepare();
+			document.getElementById('address').value = ''
+			document.getElementById('maia').value = ''
+			document.getElementById('seed').value = ''
+			prepare()
 		}
-		
+
+		function random(id) {
+			document.getElementById(id).value = MAIA.keyGen()
+		}
+
 	</script>
 </head>
 <body>
 	<h1 class="center">MAIA</h1>
 	<h2 class="center">Masked Authenticated IOTA Address</h2>
-	<label for="address">Address</label><input id="address" name="address" type="text">
-	<label for="seed">Seed</label><input id="seed" name="seed" type="text">
+	<label for="address">Address</label><input id="address" name="address" type="text"><button class="random" onclick="random('address')">Random</button>
+	<label for="seed">Seed</label><input id="seed" name="seed" type="text"><button class="random" onclick="random('seed')">Random</button>
 	<label for="maia">MAIA</label><input id="maia" name="maia" type="text">
 	<div id="button-bar" class="center">
 		<button onclick=generate()>Generate</button>

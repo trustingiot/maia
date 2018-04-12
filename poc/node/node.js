@@ -1,50 +1,46 @@
 /**
  * MAIA Proof of Concept
  */
-
-let IOTA = require('iota.lib.js');
-let MAM = require('../../lib/mam.node.js');
-let MAIA = require('../../dist/maia.js');
-
-let instance = new MAIA.MAIA('https://testnet140.tangle.works:443');
+let MAIA = require('../../dist/maia.js').MAIA
+let instance = new MAIA('https://testnet140.tangle.works:443')
 
 const testGenerate = async address => {
-	let message = await instance.generate(address);
-	let seed = message.state.seed;
-	let maia = message.root;
-	
-	console.log('seed: ' + seed);
-	console.log('maia: ' + maia);
-	return message;
+	let message = await instance.generate(address)
+	let seed = message.state.seed
+	let maia = message.root
+
+	console.log('seed: ' + seed)
+	console.log('maia: ' + maia)
+	return message
 }
 
 const testObtain = async maia => {
-	let result = await instance.obtain(maia);
-	console.log('address: ' + result);
+	let result = await instance.obtain(maia)
+	console.log('address: ' + result)
 }
 
 async function testUpdate(maia, seed, address) {
-	await instance.update(seed, maia, address);
+	await instance.update(seed, maia, address)
 }
 
 async function test() {
-	let address = 'KIFEHFFMQDPHLHGURUXDZGTJVDZMDLCFSVXXRNXKCIXJZSJNBWULBLQXYSNZNVGIJXVCITXREHUUKCHGDCSEBGYDEB';
-	let seed = null; // Modify if you want to generate MAIA with a given seed
-	
-	console.log('Generate new maia address for "' + address + '".');
-	let message = await testGenerate(address, seed);
-	let maia = message.root;
-	
-	console.log('\nObtain maia address "' + maia + '".');
-	await testObtain(maia);
-	
-	address = 'XUCLXBEAKY9JJLPQGGNMKNSBJZULR9CXBVWXBTEBBRQXR9LLMUTOBSZYQPINWDEB9HAADVYCVVZNVQEOY';
-	console.log('\nUpdate maia address "' + maia + '" => "' + address + '".');
-	await testUpdate(maia, message.state.seed, address);
+	let address = 'KIFEHFFMQDPHLHGURUXDZGTJVDZMDLCFSVXXRNXKCIXJZSJNBWULBLQXYSNZNVGIJXVCITXREHUUKCHGDCSEBGYDEB'
+	let seed = null // Modify if you want to generate MAIA with a given seed
+
+	console.log('Generate new maia address for "' + address + '".')
+	let message = await testGenerate(address, seed)
+	let maia = message.root
+
+	console.log('\nObtain maia address "' + maia + '".')
+	await testObtain(maia)
+
+	address = 'XUCLXBEAKY9JJLPQGGNMKNSBJZULR9CXBVWXBTEBBRQXR9LLMUTOBSZYQPINWDEB9HAADVYCVVZNVQEOY'
+	console.log('\nUpdate maia address "' + maia + '" => "' + address + '".')
+	await testUpdate(maia, message.state.seed, address)
 	console.log("Updated!")
-	
-	console.log('\nObtain maia address "' + maia + '".');
-	await testObtain(maia);
+
+	console.log('\nObtain maia address "' + maia + '".')
+	await testObtain(maia)
 }
 
-test();
+test()

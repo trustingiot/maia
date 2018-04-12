@@ -3,7 +3,7 @@
  */
 class MAIA {	
 	constructor(provider) {
-		this.iota = new IOTA({provider});
+		this.iota = new IOTA({provider})
 	}
 
 	/**
@@ -44,10 +44,10 @@ class MAIA {
 	 * Init MAM
 	 */
 	initMAM(seed = null, maia = null) {
-		this.mam = (seed == null) ? Mam.init(this.iota) : Mam.init(this.iota, seed);
-		this.fixChannelStart(seed, maia);
-		this.maia = maia;
-		this.seed = this.mam.seed;
+		this.mam = (seed == null) ? Mam.init(this.iota) : Mam.init(this.iota, seed)
+		this.fixChannelStart(seed, maia)
+		this.maia = maia
+		this.seed = this.mam.seed
 	}
 
 	// FIXME Bug in MAM
@@ -64,16 +64,46 @@ class MAIA {
 		let packet = await Mam.fetch(maia, 'public')
 		return packet.messages
 	}
+
+	/**
+	 * Generate seed (copy & adapted from => https://github.com/iotaledger/mam.client.js/blob/master/src/index.js)
+	 */
+	static keyGen(length = 81) {
+		var charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ9'
+		var values = MAIA.generateRandomValues(length)
+		var result = new Array(length)
+		for (var i = 0; i < length; i++) {
+			result[i] = charset[values[i] % charset.length]
+		}
+		return result.join('')
+	}
+
+	static generateRandomValues(length) {
+		var values
+		if (isNode()) {
+			values = crypto.randomBytes(length)
+		} else {
+			values = new Uint32Array(length)
+			crypto.getRandomValues(values)
+		}
+		return values
+	}
 }
 
-// Frontend
-if (typeof window !== 'undefined') {
-	window.MAIA = MAIA;
+function isNode() {
+	return (typeof window === 'undefined')
+}
 
 // Backend
-} else if (typeof module !== 'undefined' && module.exports) {
+if (isNode()) {
+	var crypto = require('crypto')
 	var IOTA = require('iota.lib.js')
 	var Mam = require('../lib/mam.node.js')
 
 	exports.MAIA = MAIA
+
+// Frontend
+} else {
+	window.MAIA = MAIA
+	var crypto = window.crypto
 }
