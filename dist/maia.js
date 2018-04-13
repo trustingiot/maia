@@ -2,6 +2,31 @@
  * Masked Authenticated IOTA Address
  */
 class MAIA {
+
+	static get VERSION() {
+		return 1
+	}
+
+	static get METHOD() {
+		return {
+			GENERATE: 'generate',
+			OBTAIN: 'obtain',
+			UPDATE: 'update'
+		}
+	}
+
+	static get RESPONSE_CODE() {
+		return {
+			OK: 'ok',
+			INVALID_VERSION: 'invalid version',
+			INVALID_REQUEST: 'invalid request',
+			UNKNOWN_REQUEST: 'unknown request',
+			INVALID_ADDRESS: 'invalid address',
+			INVALID_SEED: 'invalid seed',
+			INVALID_MAIA: 'invalid maia'
+		}
+	}
+
 	constructor(provider) {
 		this.iota = new IOTA({provider})
 	}
@@ -11,26 +36,31 @@ class MAIA {
 	 */
 	async gateway(message) {
 		let response = {}
-		if (message == null || message.method === undefined) {
-			response.status = MAIA_RESPONSE_CODE.INVALID_REQUEST
+		if (message == null || message.method === undefined || message.version === undefined) {
+			response.status = MAIA.RESPONSE_CODE.INVALID_REQUEST
+			return response
+		}
+
+		if (message.version > MAIA.VERSION) {
+			response.status = MAIA.RESPONSE_CODE.INVALID_VERSION
 			return response
 		}
 
 		switch (message.method) {
-		case MAIA_METHOD.GENERATE:
+		case MAIA.METHOD.GENERATE:
 			response.address = message.address
 			response.seed = (message.seed === undefined) ? MAIA.keyGen() : message.seed
 			response.maia = undefined
 			await this.processGenerate(response)
 			break
 
-		case MAIA_METHOD.OBTAIN:
+		case MAIA.METHOD.OBTAIN:
 			response.address = undefined
 			response.maia = message.maia
 			await this.processObtain(response)
 			break
 
-		case MAIA_METHOD.UPDATE:
+		case MAIA.METHOD.UPDATE:
 			response.address = message.address
 			response.seed = message.seed
 			response.maia = message.maia
@@ -38,7 +68,7 @@ class MAIA {
 			break
 
 		default:
-			response.status = MAIA_RESPONSE_CODE.UNKNOWN_REQUEST
+			response.status = MAIA.RESPONSE_CODE.UNKNOWN_REQUEST
 		}
 
 		return response
@@ -48,55 +78,55 @@ class MAIA {
 	 * Process generate request
 	 */
 	async processGenerate(message) {
-		if (!ADDRESS_REGEX.test(message.address)) {
-			message.status = MAIA_RESPONSE_CODE.INVALID_ADDRESS
+		if (!this.validAddress(message.address)) {
+			message.status = MAIA.RESPONSE_CODE.INVALID_ADDRESS
 			return
 		}
 
-		if (!ADDRESS_REGEX.test(message.seed)) {
-			message.status = MAIA_RESPONSE_CODE.INVALID_SEED
+		if (!this.validAddress(message.seed)) {
+			message.status = MAIA.RESPONSE_CODE.INVALID_SEED
 			return
 		}
 
 		let r = await this.generate(message.address, message.seed)
 		message.maia = r.root
-		message.status = MAIA_RESPONSE_CODE.OK
+		message.status = MAIA.RESPONSE_CODE.OK
 	}
 
 	/**
 	 * Process obtain request
 	 */
 	async processObtain(message) {
-		if (!ADDRESS_REGEX.test(message.maia)) {
-			message.status = MAIA_RESPONSE_CODE.INVALID_MAIA
+		if (!this.validAddress(message.maia)) {
+			message.status = MAIA.RESPONSE_CODE.INVALID_MAIA
 			return
 		}
 
 		message.address = await this.obtain(message.maia)
-		message.status = MAIA_RESPONSE_CODE.OK
+		message.status = MAIA.RESPONSE_CODE.OK
 	}
 
 	/**
 	 * Process update request
 	 */
 	async processUpdate(message) {
-		if (!ADDRESS_REGEX.test(message.address)) {
-			message.status = MAIA_RESPONSE_CODE.INVALID_ADDRESS
+		if (!this.validAddress(message.address)) {
+			message.status = MAIA.RESPONSE_CODE.INVALID_ADDRESS
 			return
 		}
 
-		if (!ADDRESS_REGEX.test(message.seed)) {
-			message.status = MAIA_RESPONSE_CODE.INVALID_SEED
+		if (!this.validAddress(message.seed)) {
+			message.status = MAIA.RESPONSE_CODE.INVALID_SEED
 			return
 		}
 
-		if (!ADDRESS_REGEX.test(message.maia)) {
-			message.status = MAIA_RESPONSE_CODE.INVALID_MAIA
+		if (!this.validAddress(message.maia)) {
+			message.status = MAIA.RESPONSE_CODE.INVALID_MAIA
 			return
 		}
 
 		await this.update(message.address, message.seed, message.maia)
-		message.status = MAIA_RESPONSE_CODE.OK
+		message.status = MAIA.RESPONSE_CODE.OK
 	}
 
 	/**
@@ -186,26 +216,14 @@ class MAIA {
 		return values
 	}
 
-	static validAddress(address) {
-		return ADDRESS_REGEX.test(address)
+	/**
+	 * Validate address
+	 */
+	validAddress(address) {
+		if (!this.iota.valid.isAddress(address)) return false
+		if (address.length == 81) return true
+		return this.iota.utils.isValidChecksum(address)
 	}
-}
-
-const ADDRESS_REGEX = new RegExp("^([A-Z9]{81}|[A-Z9]{90})$")
-
-const MAIA_RESPONSE_CODE = {
-	OK: 'ok',
-	INVALID_REQUEST: 'invalid request',
-	UNKNOWN_REQUEST: 'unkdnown request',
-	INVALID_ADDRESS: 'invalid address',
-	INVALID_SEED: 'invalid seed',
-	INVALID_MAIA: 'invalid maia'
-}
-
-const MAIA_METHOD = {
-	GENERATE: 'generate',
-	OBTAIN: 'obtain',
-	UPDATE: 'update'
 }
 
 function isNode() {
@@ -218,9 +236,9 @@ if (isNode()) {
 	var IOTA = require('iota.lib.js')
 	var Mam = require('../lib/mam.node.js')
 
+	exports.IOTA = IOTA
+	exports.Mam = Mam
 	exports.MAIA = MAIA
-	exports.MAIA_RESPONSE_CODE = MAIA_RESPONSE_CODE
-	exports.MAIA_METHOD = MAIA_METHOD
 
 // Frontend
 } else {

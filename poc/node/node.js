@@ -1,8 +1,8 @@
 /**
  * MAIA Proof of Concept
  */
-let MAIA = require('../../dist/maia.js')
-let instance = new MAIA.MAIA('https://testnet140.tangle.works:443')
+let MAIA = require('../../dist/maia.js').MAIA
+let instance = new MAIA('https://testnet140.tangle.works:443')
 
 const testGenerate = async address => {
 	let message = await instance.generate(address)
@@ -33,8 +33,8 @@ async function testAPI() {
 	console.log("  #########")
 	console.log()
 
-	let address = MAIA.MAIA.keyGen()
-	let seed = null // Modify if you want to generate MAIA with a given seed
+	let address = MAIA.keyGen()
+	let seed = MAIA.keyGen()
 
 	console.log('Generate new maia address for "' + address + '".')
 	let message = await testGenerate(address, seed)
@@ -43,9 +43,9 @@ async function testAPI() {
 	console.log('\nObtain maia address "' + maia + '".')
 	await testObtain(maia)
 
-	address = MAIA.MAIA.keyGen()
+	address = MAIA.keyGen()
 	console.log('\nUpdate maia address "' + maia + '" => "' + address + '".')
-	await testUpdate(maia, message.state.seed, address)
+	await testUpdate(maia, seed, address)
 	console.log("Updated!")
 
 	console.log('\nObtain maia address "' + maia + '".')
@@ -72,31 +72,44 @@ async function testGateway() {
 	console.log()
 
 	let address, seed, maia
+	let version = MAIA.VERSION
 	let request = {}
 	let response = {}
 
-	console.log("#### Generate with random seed ####")
+	console.log("#### Null request ####")
+	await testRequest(null)
+
+	console.log("\n#### Invalid method ####")
+	await testRequest({version: version, method: 'undefined'})
+
+	console.log("\n#### Invalid version ####")
+	await testRequest({version: version + 1, method: MAIA.METHOD.OBTAIN})
+
+	console.log("\n#### Generate with random seed ####")
 	// Generate
-	address = MAIA.MAIA.keyGen()
+	address = MAIA.keyGen()
 	request = {
-		method: MAIA.MAIA_METHOD.GENERATE,
+		version: version,
+		method: MAIA.METHOD.GENERATE,
 		address: address
 	}
 	response = await testRequest(request)
 
 	// Obtain
 	request = {
-		method: MAIA.MAIA_METHOD.OBTAIN,
+		version: version,
+		method: MAIA.METHOD.OBTAIN,
 		maia: response.maia
 	}
 	await testRequest(request)
 
 	console.log("\n#### Generate with given seed ####")
 	// Generate
-	address = MAIA.MAIA.keyGen()
-	seed = MAIA.MAIA.keyGen()
+	address = MAIA.keyGen()
+	seed = MAIA.keyGen()
 	request = {
-		method: MAIA.MAIA_METHOD.GENERATE,
+		version: version,
+		method: MAIA.METHOD.GENERATE,
 		address: address,
 		seed: seed
 	}
@@ -104,17 +117,19 @@ async function testGateway() {
 
 	// Obtain
 	request = {
-		method: MAIA.MAIA_METHOD.OBTAIN,
+		version: version,
+		method: MAIA.METHOD.OBTAIN,
 		maia: response.maia
 	}
 	await testRequest(request)
 
 	console.log("\n#### Update ####")
 	// Generate
-	address = MAIA.MAIA.keyGen()
-	seed = MAIA.MAIA.keyGen()
+	address = MAIA.keyGen()
+	seed = MAIA.keyGen()
 	request = {
-		method: MAIA.MAIA_METHOD.GENERATE,
+		version: version,
+		method: MAIA.METHOD.GENERATE,
 		address: address,
 		seed: seed
 	}
@@ -122,16 +137,18 @@ async function testGateway() {
 
 	// Obtain
 	request = {
-		method: MAIA.MAIA_METHOD.OBTAIN,
+		version: version,
+		method: MAIA.METHOD.OBTAIN,
 		maia: response.maia
 	}
 	await testRequest(request)
 
 	// Update
 	maia = request.maia
-	address = MAIA.MAIA.keyGen()
+	address = MAIA.keyGen()
 	request = {
-		method: MAIA.MAIA_METHOD.UPDATE,
+		version: version,
+		method: MAIA.METHOD.UPDATE,
 		address: address,
 		seed: seed,
 		maia: maia
@@ -140,7 +157,8 @@ async function testGateway() {
 
 	// Obtain
 	request = {
-		method: MAIA.MAIA_METHOD.OBTAIN,
+		version: version,
+		method: MAIA.METHOD.OBTAIN,
 		maia: maia
 	}
 	await testRequest(request)
