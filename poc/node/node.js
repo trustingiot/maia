@@ -45,7 +45,7 @@ async function testAPI() {
 
 	address = MAIA.keyGen()
 	console.log('\nUpdate maia address "' + maia + '" => "' + address + '".')
-	await testUpdate(maia, seed, address)
+	await testUpdate(seed, address)
 	console.log("Updated!")
 
 	console.log('\nObtain maia address "' + maia + '".')
@@ -150,8 +150,7 @@ async function testGateway() {
 		version: version,
 		method: MAIA.METHOD.UPDATE,
 		address: address,
-		seed: seed,
-		maia: maia
+		seed: seed
 	}
 	await testRequest(request)
 

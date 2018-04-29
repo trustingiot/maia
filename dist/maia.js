@@ -63,7 +63,6 @@ class MAIA {
 		case MAIA.METHOD.UPDATE:
 			response.address = message.address
 			response.seed = message.seed
-			response.maia = message.maia
 			await this.processUpdate(response)
 			break
 
@@ -120,12 +119,7 @@ class MAIA {
 			return
 		}
 
-		if (!this.validAddress(message.maia)) {
-			message.status = MAIA.RESPONSE_CODE.INVALID_MAIA
-			return
-		}
-
-		await this.update(message.address, message.seed, message.maia)
+		await this.update(message.address, message.seed)
 		message.status = MAIA.RESPONSE_CODE.OK
 	}
 
@@ -158,7 +152,8 @@ class MAIA {
 	/**
 	 * Update MAIA address
 	 */
-	async update(address, seed, maia) {
+	async update(address, seed) {
+		let maia = MAIA.generateMAIA(seed)
 		await this.initMAM(seed, maia)
 		return await this.publish(address)
 	}
@@ -217,6 +212,14 @@ class MAIA {
 	}
 
 	/**
+	 * Generate MAIA from seed (Dirty way...)
+	 */
+	// TODO use iota-bindings to create merkle tree
+	static generateMAIA(seed) {
+		return Mam.create(Mam.init(iotaWrapper, seed), '').root
+	}
+
+	/**
 	 * Validate address
 	 */
 	validAddress(address) {
@@ -239,9 +242,11 @@ if (isNode()) {
 	exports.IOTA = IOTA
 	exports.Mam = Mam
 	exports.MAIA = MAIA
+	exports.iotaWrapper = new IOTA('')
 
 // Frontend
 } else {
 	window.MAIA = MAIA
 	var crypto = window.crypto
+	var iotaWrapper = new IOTA('')
 }
