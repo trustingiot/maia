@@ -9,9 +9,9 @@ class MAIA {
 
 	static get METHOD() {
 		return {
-			GENERATE: 'generate',
-			UPDATE: 'update',
 			GET: 'get',
+			POST: 'post',
+			UPDATE: 'update'
 		}
 	}
 
@@ -47,23 +47,23 @@ class MAIA {
 		}
 
 		switch (message.method) {
-		case MAIA.METHOD.GENERATE:
+		case MAIA.METHOD.GET:
+			response.address = undefined
+			response.maia = message.maia
+			await this.processGET(response)
+			break
+
+		case MAIA.METHOD.POST:
 			response.address = message.address
 			response.seed = (message.seed === undefined) ? MAIA.keyGen() : message.seed
 			response.maia = undefined
-			await this.processGenerate(response)
+			await this.processPOST(response)
 			break
 
 		case MAIA.METHOD.UPDATE:
 			response.address = message.address
 			response.seed = message.seed
 			await this.processUpdate(response)
-			break
-
-		case MAIA.METHOD.GET:
-			response.address = undefined
-			response.maia = message.maia
-			await this.processGET(response)
 			break
 
 		default:
@@ -74,9 +74,22 @@ class MAIA {
 	}
 
 	/**
-	 * Process generate request
+	 * Process GET request
 	 */
-	async processGenerate(message) {
+	async processGET(message) {
+		if (!this.validAddress(message.maia)) {
+			message.status = MAIA.RESPONSE_CODE.INVALID_MAIA
+			return
+		}
+
+		message.address = await this.get(message.maia)
+		message.status = MAIA.RESPONSE_CODE.OK
+	}
+
+	/**
+	 * Process POST request
+	 */
+	async processPOST(message) {
 		if (!this.validAddress(message.address)) {
 			message.status = MAIA.RESPONSE_CODE.INVALID_ADDRESS
 			return
@@ -87,7 +100,7 @@ class MAIA {
 			return
 		}
 
-		let r = await this.generate(message.address, message.seed)
+		let r = await this.post(message.address, message.seed)
 		message.maia = r.root
 		message.status = MAIA.RESPONSE_CODE.OK
 	}
@@ -111,22 +124,18 @@ class MAIA {
 	}
 
 	/**
-	 * Process GET request
+	 * Obtain address from MAIA
 	 */
-	async processGET(message) {
-		if (!this.validAddress(message.maia)) {
-			message.status = MAIA.RESPONSE_CODE.INVALID_MAIA
-			return
-		}
-
-		message.address = await this.get(message.maia)
-		message.status = MAIA.RESPONSE_CODE.OK
+	async get(maia) {
+		await this.initMAM()
+		let messages = await this.obtainMessages(maia)
+		return (messages.length == 0) ? null : messages[messages.length - 1]
 	}
 
 	/**
 	 * Generate MAIA for address
 	*/
-	async generate(address, seed = null) {
+	async post(address, seed = null) {
 		await this.initMAM(seed)
 		return await this.publish(address)
 	}
@@ -138,15 +147,6 @@ class MAIA {
 		let message = Mam.create(this.mam, address)
 		await Mam.attach(message.payload, message.root)
 		return message
-	}
-
-	/**
-	 * Obtain address from MAIA
-	 */
-	async get(maia) {
-		await this.initMAM()
-		let messages = await this.obtainMessages(maia)
-		return (messages.length == 0) ? null : messages[messages.length - 1]
 	}
 
 	/**

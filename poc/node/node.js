@@ -4,13 +4,9 @@
 let MAIA = require('../../dist/maia.js').MAIA
 let instance = new MAIA('https://testnet140.tangle.works:443')
 
-const testGenerate = async address => {
-	let message = await instance.generate(address)
-	let seed = message.state.seed
-	let maia = message.root
-
-	console.log('seed: ' + seed)
-	console.log('maia: ' + maia)
+async function testPOST(address, seed) {
+	let message = await instance.post(address, seed)
+	console.log('maia: ' + message.root)
 	return message
 }
 
@@ -37,7 +33,7 @@ async function testAPI() {
 	let seed = MAIA.keyGen()
 
 	console.log('Generate new maia address for "' + address + '".')
-	let message = await testGenerate(address, seed)
+	let message = await testPOST(address, seed)
 	let maia = message.root
 
 	console.log('\nObtain maia address "' + maia + '".')
@@ -86,11 +82,11 @@ async function testGateway() {
 	await testRequest({version: version + 1, method: MAIA.METHOD.OBTAIN})
 
 	console.log("\n#### Generate with random seed ####")
-	// Generate
+	// POST
 	address = MAIA.keyGen()
 	request = {
 		version: version,
-		method: MAIA.METHOD.GENERATE,
+		method: MAIA.METHOD.POST,
 		address: address
 	}
 	response = await testRequest(request)
@@ -104,12 +100,12 @@ async function testGateway() {
 	await testRequest(request)
 
 	console.log("\n#### Generate with given seed ####")
-	// Generate
+	// POST
 	address = MAIA.keyGen()
 	seed = MAIA.keyGen()
 	request = {
 		version: version,
-		method: MAIA.METHOD.GENERATE,
+		method: MAIA.METHOD.POST,
 		address: address,
 		seed: seed
 	}
@@ -124,12 +120,12 @@ async function testGateway() {
 	await testRequest(request)
 
 	console.log("\n#### Update ####")
-	// Generate
+	// POST
 	address = MAIA.keyGen()
 	seed = MAIA.keyGen()
 	request = {
 		version: version,
-		method: MAIA.METHOD.GENERATE,
+		method: MAIA.METHOD.POST,
 		address: address,
 		seed: seed
 	}
