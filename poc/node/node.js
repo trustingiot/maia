@@ -14,13 +14,13 @@ const testGenerate = async address => {
 	return message
 }
 
-const testObtain = async maia => {
-	let result = await instance.obtain(maia)
+const testGET = async maia => {
+	let result = await instance.get(maia)
 	console.log('address: ' + result)
 }
 
-async function testUpdate(maia, seed, address) {
-	await instance.update(seed, maia, address)
+async function testUpdate(address, seed) {
+	await instance.update(address, seed)
 }
 
 async function testAPI() {
@@ -41,15 +41,15 @@ async function testAPI() {
 	let maia = message.root
 
 	console.log('\nObtain maia address "' + maia + '".')
-	await testObtain(maia)
+	await testGET(maia)
 
 	address = MAIA.keyGen()
 	console.log('\nUpdate maia address "' + maia + '" => "' + address + '".')
-	await testUpdate(seed, address)
+	await testUpdate(address, seed)
 	console.log("Updated!")
 
 	console.log('\nObtain maia address "' + maia + '".')
-	await testObtain(maia)
+	await testGET(maia)
 }
 
 async function testRequest(request) {
@@ -95,10 +95,10 @@ async function testGateway() {
 	}
 	response = await testRequest(request)
 
-	// Obtain
+	// GET
 	request = {
 		version: version,
-		method: MAIA.METHOD.OBTAIN,
+		method: MAIA.METHOD.GET,
 		maia: response.maia
 	}
 	await testRequest(request)
@@ -115,10 +115,10 @@ async function testGateway() {
 	}
 	response = await testRequest(request)
 
-	// Obtain
+	// GET
 	request = {
 		version: version,
-		method: MAIA.METHOD.OBTAIN,
+		method: MAIA.METHOD.GET,
 		maia: response.maia
 	}
 	await testRequest(request)
@@ -135,10 +135,10 @@ async function testGateway() {
 	}
 	response = await testRequest(request)
 
-	// Obtain
+	// GET
 	request = {
 		version: version,
-		method: MAIA.METHOD.OBTAIN,
+		method: MAIA.METHOD.GET,
 		maia: response.maia
 	}
 	await testRequest(request)
@@ -154,10 +154,10 @@ async function testGateway() {
 	}
 	await testRequest(request)
 
-	// Obtain
+	// GET
 	request = {
 		version: version,
-		method: MAIA.METHOD.OBTAIN,
+		method: MAIA.METHOD.GET,
 		maia: maia
 	}
 	await testRequest(request)

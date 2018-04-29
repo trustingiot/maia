@@ -4,14 +4,14 @@
 class MAIA {
 
 	static get VERSION() {
-		return 1
+		return 2
 	}
 
 	static get METHOD() {
 		return {
 			GENERATE: 'generate',
-			OBTAIN: 'obtain',
-			UPDATE: 'update'
+			UPDATE: 'update',
+			GET: 'get',
 		}
 	}
 
@@ -54,16 +54,16 @@ class MAIA {
 			await this.processGenerate(response)
 			break
 
-		case MAIA.METHOD.OBTAIN:
-			response.address = undefined
-			response.maia = message.maia
-			await this.processObtain(response)
-			break
-
 		case MAIA.METHOD.UPDATE:
 			response.address = message.address
 			response.seed = message.seed
 			await this.processUpdate(response)
+			break
+
+		case MAIA.METHOD.GET:
+			response.address = undefined
+			response.maia = message.maia
+			await this.processGET(response)
 			break
 
 		default:
@@ -93,19 +93,6 @@ class MAIA {
 	}
 
 	/**
-	 * Process obtain request
-	 */
-	async processObtain(message) {
-		if (!this.validAddress(message.maia)) {
-			message.status = MAIA.RESPONSE_CODE.INVALID_MAIA
-			return
-		}
-
-		message.address = await this.obtain(message.maia)
-		message.status = MAIA.RESPONSE_CODE.OK
-	}
-
-	/**
 	 * Process update request
 	 */
 	async processUpdate(message) {
@@ -120,6 +107,19 @@ class MAIA {
 		}
 
 		await this.update(message.address, message.seed)
+		message.status = MAIA.RESPONSE_CODE.OK
+	}
+
+	/**
+	 * Process GET request
+	 */
+	async processGET(message) {
+		if (!this.validAddress(message.maia)) {
+			message.status = MAIA.RESPONSE_CODE.INVALID_MAIA
+			return
+		}
+
+		message.address = await this.get(message.maia)
 		message.status = MAIA.RESPONSE_CODE.OK
 	}
 
@@ -143,7 +143,7 @@ class MAIA {
 	/**
 	 * Obtain address from MAIA
 	 */
-	async obtain(maia) {
+	async get(maia) {
 		await this.initMAM()
 		let messages = await this.obtainMessages(maia)
 		return (messages.length == 0) ? null : messages[messages.length - 1]

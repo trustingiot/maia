@@ -54,12 +54,12 @@
 			appendResult('maia: ' + result.root + '\n')
 		}
 
-		async function obtain() {
+		async function get() {
 			prepare()
 			if (!notEmpty('maia')) return
 
 			setResult('Obtain address from MAIA => ' + form.maia + '\n\n')
-			let result = await instance.obtain(form.maia)
+			let result = await instance.get(form.maia)
 			appendResult(result)
 		}
 
@@ -67,10 +67,9 @@
 			prepare()
 			if (!notEmpty('address')) return
 			if (!notEmpty('seed')) return
-			if (!notEmpty('maia')) return
 
-			setResult('Update MAIA address => ' + form.maia + '\n\n')
-			let result = await instance.update(form.maia, form.seed, form.address)
+			setResult('Update MAIA address => ' + MAIA.generateMAIA(form.seed) + '\n\n')
+			let result = await instance.update(form.address, form.seed)
 			appendResult('Updated!')
 		}
 
@@ -94,8 +93,8 @@
 	<label for="seed">Seed</label><input id="seed" name="seed" type="text"><button class="random" onclick="random('seed')">Random</button>
 	<label for="maia">MAIA</label><input id="maia" name="maia" type="text">
 	<div id="button-bar" class="center">
+		<button onclick=get()>GET</button>
 		<button onclick=generate()>Generate</button>
-		<button onclick=obtain()>Obtain</button>
 		<button onclick=update()>Update</button>
 		<button onclick=clean()>Clean</button>
 	</div>
