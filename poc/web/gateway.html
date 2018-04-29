@@ -28,17 +28,26 @@
 			request = {
 				version: MAIA.VERSION,
 				method: method,
-				address: document.getElementById('address').value,
-				seed: document.getElementById('seed').value,
-				maia: document.getElementById('maia').value,
 			}
-			cleanRequest()
+			setFields()
 		}
 
-		function cleanRequest() {
-			if (request.address == '') delete request.address
-			if (request.seed == '') delete request.seed
-			if (request.maia == '') delete request.maia
+		function setFields() {
+			switch (request.method) {
+			case MAIA.METHOD.GET:
+				set('maia')
+				break
+
+			case MAIA.METHOD.POST:
+				set('address')
+				set('seed')
+				break
+			}
+		}
+
+		function set(field) {
+			let value = document.getElementById(field).value
+			if (value != '') request[field] = value
 		}
 
 		async function sendRequest() {
@@ -79,8 +88,7 @@
 	<div id="button-bar" class="center">
 		<button onclick=call(MAIA.METHOD.GET)>GET</button>
 		<button onclick=call(MAIA.METHOD.POST)>POST</button>
-		<button onclick=call(MAIA.METHOD.UPDATE)>Update</button>
-		<button onclick=clean()>Clean</button>
+		<button onclick=clean()>CLEAN</button>
 	</div>
 	<textarea id="result" name="result" rows="17"></textarea>
 	<p class="warning center">Warning: Inputs are not validated<p>

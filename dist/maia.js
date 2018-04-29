@@ -10,8 +10,7 @@ class MAIA {
 	static get METHOD() {
 		return {
 			GET: 'get',
-			POST: 'post',
-			UPDATE: 'update'
+			POST: 'post'
 		}
 	}
 
@@ -60,12 +59,6 @@ class MAIA {
 			await this.processPOST(response)
 			break
 
-		case MAIA.METHOD.UPDATE:
-			response.address = message.address
-			response.seed = message.seed
-			await this.processUpdate(response)
-			break
-
 		default:
 			response.status = MAIA.RESPONSE_CODE.UNKNOWN_REQUEST
 		}
@@ -106,38 +99,41 @@ class MAIA {
 	}
 
 	/**
-	 * Process update request
-	 */
-	async processUpdate(message) {
-		if (!this.validAddress(message.address)) {
-			message.status = MAIA.RESPONSE_CODE.INVALID_ADDRESS
-			return
-		}
-
-		if (!this.validAddress(message.seed)) {
-			message.status = MAIA.RESPONSE_CODE.INVALID_SEED
-			return
-		}
-
-		await this.update(message.address, message.seed)
-		message.status = MAIA.RESPONSE_CODE.OK
-	}
-
-	/**
-	 * Obtain address from MAIA
+	 * Get MAIA
 	 */
 	async get(maia) {
-		await this.initMAM()
 		let messages = await this.obtainMessages(maia)
 		return (messages.length == 0) ? null : messages[messages.length - 1]
 	}
 
 	/**
-	 * Generate MAIA for address
-	*/
+	 * Post MAIA
+	 */
 	async post(address, seed = null) {
-		await this.initMAM(seed)
+		this.seed = (seed == null) ? MAIA.keyGen() : seed
+		this.maia = MAIA.generateMAIA(this.seed)
+
+		let messages = await this.obtainMessages(this.maia)
+		this.mam = Mam.init(this.iota, this.seed)
+		// FIXME Bug in MAM @see obtainMessages
+		this.mam.channel.start = messages.length
+
 		return await this.publish(address)
+	}
+
+	/**
+	 * Obtain channel messages
+	 */
+	async obtainMessages(maia) {
+		try {
+			this.mam = Mam.init(this.iota)
+			let packet = await Mam.fetch(maia, 'public')
+			return packet.messages
+
+			// FIXME add method to MAM to remove exception (hasMessages)
+		} catch (err) {
+			return []
+		}
 	}
 
 	/**
@@ -147,41 +143,6 @@ class MAIA {
 		let message = Mam.create(this.mam, address)
 		await Mam.attach(message.payload, message.root)
 		return message
-	}
-
-	/**
-	 * Update MAIA address
-	 */
-	async update(address, seed) {
-		let maia = MAIA.generateMAIA(seed)
-		await this.initMAM(seed, maia)
-		return await this.publish(address)
-	}
-
-	/**
-	 * Init MAM
-	 */
-	async initMAM(seed = null, maia = null) {
-		this.mam = (seed == null) ? Mam.init(this.iota) : Mam.init(this.iota, seed)
-		await this.fixChannelStart(seed, maia)
-		this.maia = maia
-		this.seed = this.mam.seed
-	}
-
-	// FIXME Bug in MAM
-	async fixChannelStart(seed, maia) {
-		if (seed != null && maia != null) {
-			let messages = await this.obtainMessages(maia)
-			this.mam.channel.start = messages.length
-		}
-	}
-
-	/**
-	 * Obtain channel messages
-	 */
-	async obtainMessages(maia) {
-		let packet = await Mam.fetch(maia, 'public')
-		return packet.messages
 	}
 
 	/**

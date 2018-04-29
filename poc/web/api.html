@@ -47,30 +47,22 @@
 			prepare()
 			if (!notEmpty('maia')) return
 
-			setResult('Obtain address from MAIA => ' + form.maia + '\n\n')
+			setResult('GET ' + form.maia + '\n\n')
 			let result = await instance.get(form.maia)
-			appendResult(result)
+			appendResult('address ' + result)
 		}
 
 		async function post() {
 			prepare()
 			if (!notEmpty('address')) return
 
-			setResult('Generate MAIA for address => ' + form.address + '\n\n')
+			setResult('POST ' + form.address + '\n')
+			appendResult('seed ' + ((form.seed == '') ? 'random' : form.seed) + '\n\n')
+
 			let result = await instance.post(form.address, (form.seed == '') ? null : form.seed)
 
-			appendResult('seed: ' + result.state.seed + '\n')
-			appendResult('maia: ' + result.root + '\n')
-		}
-
-		async function update() {
-			prepare()
-			if (!notEmpty('address')) return
-			if (!notEmpty('seed')) return
-
-			setResult('Update MAIA address => ' + MAIA.generateMAIA(form.seed) + '\n\n')
-			let result = await instance.update(form.address, form.seed)
-			appendResult('Updated!')
+			appendResult('seed ' + result.state.seed + '\n')
+			appendResult('maia ' + result.root + '\n')
 		}
 
 		function clean() {
@@ -95,8 +87,7 @@
 	<div id="button-bar" class="center">
 		<button onclick=get()>GET</button>
 		<button onclick=post()>POST</button>
-		<button onclick=update()>Update</button>
-		<button onclick=clean()>Clean</button>
+		<button onclick=clean()>CLEAN</button>
 	</div>
 	<textarea id="result" name="result" rows="5"></textarea>
 	<p class="warning center">Warning: Inputs are not validated<p>

@@ -6,17 +6,12 @@ let instance = new MAIA('https://testnet140.tangle.works:443')
 
 async function testPOST(address, seed) {
 	let message = await instance.post(address, seed)
-	console.log('maia: ' + message.root)
 	return message
 }
 
-const testGET = async maia => {
+async function testGET(maia) {
 	let result = await instance.get(maia)
-	console.log('address: ' + result)
-}
-
-async function testUpdate(address, seed) {
-	await instance.update(address, seed)
+	console.log('address ' + result)
 }
 
 async function testAPI() {
@@ -31,20 +26,26 @@ async function testAPI() {
 
 	let address = MAIA.keyGen()
 	let seed = MAIA.keyGen()
+	let maia = MAIA.generateMAIA(seed)
 
-	console.log('Generate new maia address for "' + address + '".')
-	let message = await testPOST(address, seed)
-	let maia = message.root
+	console.log('Random seed    ' + seed)
+	console.log('MAIA for seed  ' + maia)
+	console.log('Random address ' + address)
 
-	console.log('\nObtain maia address "' + maia + '".')
+	console.log('\n> POST address ' + address)
+	await testPOST(address, seed)
+	console.log('Done')
+
+	console.log('\n> GET   ' + maia)
 	await testGET(maia)
 
 	address = MAIA.keyGen()
-	console.log('\nUpdate maia address "' + maia + '" => "' + address + '".')
-	await testUpdate(address, seed)
-	console.log("Updated!")
+	console.log('\nRandom address ' + address)
+	console.log('> POST address ' + address)
+	await testPOST(address, seed)
+	console.log("Done")
 
-	console.log('\nObtain maia address "' + maia + '".')
+	console.log('\n> GET   ' + maia)
 	await testGET(maia)
 }
 
@@ -81,7 +82,7 @@ async function testGateway() {
 	console.log("\n#### Invalid version ####")
 	await testRequest({version: version + 1, method: MAIA.METHOD.OBTAIN})
 
-	console.log("\n#### Generate with random seed ####")
+	console.log("\n#### POST with random seed ####")
 	// POST
 	address = MAIA.keyGen()
 	request = {
@@ -99,7 +100,7 @@ async function testGateway() {
 	}
 	await testRequest(request)
 
-	console.log("\n#### Generate with given seed ####")
+	console.log("\n#### POST with given seed ####")
 	// POST
 	address = MAIA.keyGen()
 	seed = MAIA.keyGen()
@@ -122,7 +123,6 @@ async function testGateway() {
 	console.log("\n#### Update ####")
 	// POST
 	address = MAIA.keyGen()
-	seed = MAIA.keyGen()
 	request = {
 		version: version,
 		method: MAIA.METHOD.POST,
@@ -136,25 +136,6 @@ async function testGateway() {
 		version: version,
 		method: MAIA.METHOD.GET,
 		maia: response.maia
-	}
-	await testRequest(request)
-
-	// Update
-	maia = request.maia
-	address = MAIA.keyGen()
-	request = {
-		version: version,
-		method: MAIA.METHOD.UPDATE,
-		address: address,
-		seed: seed
-	}
-	await testRequest(request)
-
-	// GET
-	request = {
-		version: version,
-		method: MAIA.METHOD.GET,
-		maia: maia
 	}
 	await testRequest(request)
 }
