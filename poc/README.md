@@ -11,12 +11,12 @@
 
     npm install iota.lib.js
 
-## Web
+## Web (api & gateway)
 
-1.Copy maia.html to your webserver folder
+1.Copy api.html or gateway.html to your webserver folder
 
     mkdir <webserver>/maia
-    cp web/maia.html <webserver>/maia/
+    cp <api|gateway>.html <webserver>/maia/
 
 2.Copy libs to your webserver folder
 

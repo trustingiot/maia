@@ -4,14 +4,13 @@
 class MAIA {
 
 	static get VERSION() {
-		return 1
+		return 2
 	}
 
 	static get METHOD() {
 		return {
-			GENERATE: 'generate',
-			OBTAIN: 'obtain',
-			UPDATE: 'update'
+			GET: 'get',
+			POST: 'post'
 		}
 	}
 
@@ -47,24 +46,17 @@ class MAIA {
 		}
 
 		switch (message.method) {
-		case MAIA.METHOD.GENERATE:
+		case MAIA.METHOD.GET:
+			response.address = undefined
+			response.maia = message.maia
+			await this.processGET(response)
+			break
+
+		case MAIA.METHOD.POST:
 			response.address = message.address
 			response.seed = (message.seed === undefined) ? MAIA.keyGen() : message.seed
 			response.maia = undefined
-			await this.processGenerate(response)
-			break
-
-		case MAIA.METHOD.OBTAIN:
-			response.address = undefined
-			response.maia = message.maia
-			await this.processObtain(response)
-			break
-
-		case MAIA.METHOD.UPDATE:
-			response.address = message.address
-			response.seed = message.seed
-			response.maia = message.maia
-			await this.processUpdate(response)
+			await this.processPOST(response)
 			break
 
 		default:
@@ -75,9 +67,22 @@ class MAIA {
 	}
 
 	/**
-	 * Process generate request
+	 * Process GET request
 	 */
-	async processGenerate(message) {
+	async processGET(message) {
+		if (!this.validAddress(message.maia)) {
+			message.status = MAIA.RESPONSE_CODE.INVALID_MAIA
+			return
+		}
+
+		message.address = await this.get(message.maia)
+		message.status = MAIA.RESPONSE_CODE.OK
+	}
+
+	/**
+	 * Process POST request
+	 */
+	async processPOST(message) {
 		if (!this.validAddress(message.address)) {
 			message.status = MAIA.RESPONSE_CODE.INVALID_ADDRESS
 			return
@@ -88,53 +93,47 @@ class MAIA {
 			return
 		}
 
-		let r = await this.generate(message.address, message.seed)
+		let r = await this.post(message.address, message.seed)
 		message.maia = r.root
 		message.status = MAIA.RESPONSE_CODE.OK
 	}
 
 	/**
-	 * Process obtain request
+	 * Get MAIA
 	 */
-	async processObtain(message) {
-		if (!this.validAddress(message.maia)) {
-			message.status = MAIA.RESPONSE_CODE.INVALID_MAIA
-			return
-		}
-
-		message.address = await this.obtain(message.maia)
-		message.status = MAIA.RESPONSE_CODE.OK
+	async get(maia) {
+		let messages = await this.obtainMessages(maia)
+		return (messages.length == 0) ? null : messages[messages.length - 1]
 	}
 
 	/**
-	 * Process update request
+	 * Post MAIA
 	 */
-	async processUpdate(message) {
-		if (!this.validAddress(message.address)) {
-			message.status = MAIA.RESPONSE_CODE.INVALID_ADDRESS
-			return
-		}
+	async post(address, seed = null) {
+		this.seed = (seed == null) ? MAIA.keyGen() : seed
+		this.maia = MAIA.generateMAIA(this.seed)
 
-		if (!this.validAddress(message.seed)) {
-			message.status = MAIA.RESPONSE_CODE.INVALID_SEED
-			return
-		}
+		let messages = await this.obtainMessages(this.maia)
+		this.mam = Mam.init(this.iota, this.seed)
+		// FIXME Bug in MAM @see obtainMessages
+		this.mam.channel.start = messages.length
 
-		if (!this.validAddress(message.maia)) {
-			message.status = MAIA.RESPONSE_CODE.INVALID_MAIA
-			return
-		}
-
-		await this.update(message.address, message.seed, message.maia)
-		message.status = MAIA.RESPONSE_CODE.OK
-	}
-
-	/**
-	 * Generate MAIA for address
-	*/
-	async generate(address, seed = null) {
-		await this.initMAM(seed)
 		return await this.publish(address)
+	}
+
+	/**
+	 * Obtain channel messages
+	 */
+	async obtainMessages(maia) {
+		try {
+			this.mam = Mam.init(this.iota)
+			let packet = await Mam.fetch(maia, 'public')
+			return packet.messages
+
+			// FIXME add method to MAM to remove exception (hasMessages)
+		} catch (err) {
+			return []
+		}
 	}
 
 	/**
@@ -144,49 +143,6 @@ class MAIA {
 		let message = Mam.create(this.mam, address)
 		await Mam.attach(message.payload, message.root)
 		return message
-	}
-
-	/**
-	 * Obtain address from MAIA
-	 */
-	async obtain(maia) {
-		await this.initMAM()
-		let messages = await this.obtainMessages(maia)
-		return (messages.length == 0) ? null : messages[messages.length - 1]
-	}
-
-	/**
-	 * Update MAIA address
-	 */
-	async update(address, seed, maia) {
-		await this.initMAM(seed, maia)
-		return await this.publish(address)
-	}
-
-	/**
-	 * Init MAM
-	 */
-	async initMAM(seed = null, maia = null) {
-		this.mam = (seed == null) ? Mam.init(this.iota) : Mam.init(this.iota, seed)
-		await this.fixChannelStart(seed, maia)
-		this.maia = maia
-		this.seed = this.mam.seed
-	}
-
-	// FIXME Bug in MAM
-	async fixChannelStart(seed, maia) {
-		if (seed != null && maia != null) {
-			let messages = await this.obtainMessages(maia)
-			this.mam.channel.start = messages.length
-		}
-	}
-
-	/**
-	 * Obtain channel messages
-	 */
-	async obtainMessages(maia) {
-		let packet = await Mam.fetch(maia, 'public')
-		return packet.messages
 	}
 
 	/**
@@ -217,6 +173,14 @@ class MAIA {
 	}
 
 	/**
+	 * Generate MAIA from seed (Dirty way...)
+	 */
+	// TODO use iota-bindings to create merkle tree
+	static generateMAIA(seed) {
+		return Mam.create(Mam.init(iotaWrapper, seed), '').root
+	}
+
+	/**
 	 * Validate address
 	 */
 	validAddress(address) {
@@ -239,9 +203,11 @@ if (isNode()) {
 	exports.IOTA = IOTA
 	exports.Mam = Mam
 	exports.MAIA = MAIA
+	exports.iotaWrapper = new IOTA('')
 
 // Frontend
 } else {
 	window.MAIA = MAIA
 	var crypto = window.crypto
+	var iotaWrapper = new IOTA('')
 }
