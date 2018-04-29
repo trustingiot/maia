@@ -43,35 +43,26 @@
 			document.getElementById('result').value = document.getElementById('result').value + result
 		}
 
-		async function generate() {
-			prepare()
-			if (!notEmpty('address')) return
-
-			setResult('Generate MAIA for address => ' + form.address + '\n\n')
-			let result = await instance.generate(form.address, (form.seed == '') ? null : form.seed)
-
-			appendResult('seed: ' + result.state.seed + '\n')
-			appendResult('maia: ' + result.root + '\n')
-		}
-
-		async function obtain() {
+		async function get() {
 			prepare()
 			if (!notEmpty('maia')) return
 
-			setResult('Obtain address from MAIA => ' + form.maia + '\n\n')
-			let result = await instance.obtain(form.maia)
-			appendResult(result)
+			setResult('GET ' + form.maia + '\n\n')
+			let result = await instance.get(form.maia)
+			appendResult('address ' + result)
 		}
 
-		async function update() {
+		async function post() {
 			prepare()
 			if (!notEmpty('address')) return
-			if (!notEmpty('seed')) return
-			if (!notEmpty('maia')) return
 
-			setResult('Update MAIA address => ' + form.maia + '\n\n')
-			let result = await instance.update(form.maia, form.seed, form.address)
-			appendResult('Updated!')
+			setResult('POST ' + form.address + '\n')
+			appendResult('seed ' + ((form.seed == '') ? 'random' : form.seed) + '\n\n')
+
+			let result = await instance.post(form.address, (form.seed == '') ? null : form.seed)
+
+			appendResult('seed ' + result.state.seed + '\n')
+			appendResult('maia ' + result.root + '\n')
 		}
 
 		function clean() {
@@ -94,10 +85,9 @@
 	<label for="seed">Seed</label><input id="seed" name="seed" type="text"><button class="random" onclick="random('seed')">Random</button>
 	<label for="maia">MAIA</label><input id="maia" name="maia" type="text">
 	<div id="button-bar" class="center">
-		<button onclick=generate()>Generate</button>
-		<button onclick=obtain()>Obtain</button>
-		<button onclick=update()>Update</button>
-		<button onclick=clean()>Clean</button>
+		<button onclick=get()>GET</button>
+		<button onclick=post()>POST</button>
+		<button onclick=clean()>CLEAN</button>
 	</div>
 	<textarea id="result" name="result" rows="5"></textarea>
 	<p class="warning center">Warning: Inputs are not validated<p>
