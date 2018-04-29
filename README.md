@@ -15,8 +15,8 @@ Characteristics:
 
 ** Current version **
 
-- Number: 1
-- Date: 13.04.2018
+- Number: 2
+- Date: WIP
 
 &nbsp;
 
@@ -32,4 +32,4 @@ Characteristics:
 
 *update*
 - Updates the MAIA with a new address
-- update(address, seed, maia)
+- update(address, seed)
