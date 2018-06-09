@@ -2,7 +2,7 @@
 
 ## Protocol
 
-** General description **
+### General description
 
 A public MAM channel in which each message is an IOTA address and which always returns the last message.
 
@@ -13,14 +13,14 @@ Characteristics:
 
 &nbsp;
 
-** Current version **
+### Current version
 
 - Number: 2
 - Date: 29.04.2018
 
 &nbsp;
 
-** Specification **
+### Specification
 
 *get*
 - Returns the address associated with a MAIA

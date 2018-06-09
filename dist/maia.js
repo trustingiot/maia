@@ -31,6 +31,20 @@ class MAIA {
 	}
 
 	/**
+	 * Check connection
+	 */
+	async isConnected() {
+		try {
+			// TODO Remove this ...
+			let mam = Mam.init(this.iota)
+			await Mam.fetch(MAIA.keyGen(), 'public')
+			return true
+		} catch (err) {
+			return false
+		}
+	}
+
+	/**
 	 * Message gateway
 	 */
 	async gateway(message) {
