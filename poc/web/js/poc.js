@@ -2,8 +2,10 @@
 // Javascript functions for PoC website
 //
 const defaultNode = 'https://iotanode.us:443'
+const defaultDepth = 9
+const defaultMWM = 14
 const inputs = ['address', 'maia', 'seed']
-const date = '2018.06.09'
+const date = '2018.06.18'
 
 let request = {address:'', seed:'', maia:''}
 let mode
@@ -12,12 +14,12 @@ let instance
 
 // Return MAIA instance
 async function getMAIA() {
-	let aux = document.getElementById('node').value
-	if (aux != node) {
+	let auxNode = document.getElementById('node').value
+	if (auxNode != node) {
 		initRequest()
-		node = aux
+		node = auxNode
 		setInputValue('result', "Checking connection to node '" + node + "'")
-		instance = new MAIA(node)
+		instance = new MAIA({provider: node})
 		let connected = await instance.isConnected()
 		finishRequest()
 		if (!connected) {
@@ -25,6 +27,10 @@ async function getMAIA() {
 			instance = null
 			node = null
 		}
+	}
+	if (instance != null) {
+		instance.depth = parseInt(document.getElementById('depth').value)
+		instance.mwm = parseInt(document.getElementById('mwm').value)
 	}
 	return instance
 }
@@ -137,6 +143,8 @@ function tryGet(timeout = 1000) {
 function afterLoad() {
 	setMode()
 	document.getElementById('node').value = defaultNode
+	document.getElementById('depth').value = defaultDepth
+	document.getElementById('mwm').value = defaultMWM
 	setInfo()
 	setInputsFromParameters()
 	tryGet()

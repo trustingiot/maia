@@ -2,7 +2,7 @@
  * MAIA Proof of Concept
  */
 let MAIA = require('../../dist/maia.js').MAIA
-let instance = new MAIA('https://testnet140.tangle.works:443')
+let instance = new MAIA({provider: 'https://testnet140.tangle.works:443'})
 
 async function testPOST(address, seed) {
 	let message = await instance.post(address, seed)

@@ -26,8 +26,15 @@ class MAIA {
 		}
 	}
 
-	constructor(provider) {
-		this.iota = new IOTA({provider})
+	/**
+	 * obj.provider -> node
+	 * obj.depth -> depth
+	 * obj.mwm -> mwm
+	 */
+	constructor(obj) {
+		this.iota = new IOTA({provider: obj.provider})
+		this.depth = obj.depth || 9
+		this.mwm = obj.mwm || 14
 	}
 
 	/**
@@ -155,7 +162,7 @@ class MAIA {
 	 */
 	async publish(address) {
 		let message = Mam.create(this.mam, address)
-		await Mam.attach(message.payload, message.root)
+		await Mam.attach(message.payload, message.root, this.depth, this.mwm)
 		return message
 	}
 
