@@ -78,7 +78,7 @@
 				<input class="form-control" id="depth" type="number" value="1" min="1" max="100" step="1">
 			</div>
 
-			<div class="input-group mb-1">
+			<div class="input-group mb-3">
 				<div class="input-group-prepend">
 					<label class="input-group-text" for="mwm">MWM</label>
 				</div>
@@ -97,30 +97,85 @@
 
 			<div class="input-group mb-1">
 				<div class="input-group-prepend">
-					<label class="input-group-text" for="maia">MAIA</label>
+					<label class="input-group-text" for="layers">Layers</label>
 				</div>
-				<input class="form-control" id="maia" type="text" placeholder="MAIA address">
+				<input class="form-control" id="layers" type="number" value="3" min="1" max="100" step="1">
 			</div>
 
-			<div class="input-group mb-1">
+			<div class="input-group mb-3">
 				<div class="input-group-prepend">
-					<label class="input-group-text" for="address">Address</label>
+					<label class="input-group-text" for="layerDepth">Layer depth</label>
 				</div>
-				<input class="form-control" id="address" type="text" placeholder="IOTA address">
-				<div class="input-group-append">
-					<button class="btn btn-outline-secondary" type="button" onclick="random('address')">Random</button>
-				</div>
+				<input class="form-control" id="layerDepth" type="number" value="5" min="1" max="100" step="1">
 			</div>
 
-			<div class="input-group mb-1">
-				<div class="input-group-prepend">
-					<label class="input-group-text" for="seed">Seed</label>
+			<div id="selector">
+
+				<div class="text-center mb-2 mt-3">
+					<div class="btn-group">
+						<button type="button" id="button-maia" class="btn btn-outline-secondary" onclick="setForm('maia')">MAIA</button>
+						<button type="button" id="button-view" class="btn btn-outline-secondary" onclick="setForm('view')">VIEW</button>
+					</div>
 				</div>
-				<input class="form-control" id="seed" type="text" placeholder="MAIA seed">
-				<div class="input-group-append">
-					<button class="btn btn-outline-secondary" type="button" onclick="random('seed')">Random</button>
+
+				<div id="form-maia">
+					<div class="input-group mb-1">
+						<div class="input-group-prepend">
+							<label class="input-group-text" for="seed">Seed</label>
+						</div>
+						<input class="form-control" id="seed" type="text" placeholder="MAIA seed. Used in POST. If it is not specified it is created randomly">
+						<div class="input-group-append">
+							<button class="btn btn-outline-secondary" type="button" onclick="random('seed')">Random</button>
+						</div>
+					</div>
+
+					<div class="input-group mb-1">
+						<div class="input-group-prepend">
+							<label class="input-group-text" for="maia">MAIA</label>
+						</div>
+						<input class="form-control" id="maia" type="text" placeholder="MAIA address. Used in GET">
+					</div>
+
+					<div class="input-group mb-1">
+						<div class="input-group-prepend">
+							<label class="input-group-text" for="field">Field</label>
+						</div>
+						<input class="form-control" id="field" type="text" placeholder="Field to be setted">
+					</div>
+
+					<div class="input-group mb-1">
+						<div class="input-group-prepend">
+							<label class="input-group-text" for="value">Value</label>
+						</div>
+						<input class="form-control" id="value" type="text" placeholder="Field value. Empty to clean">
+					</div>
 				</div>
+
+				<div id="form-view">
+					<div class="input-group mb-1">
+						<div class="input-group-prepend">
+							<label class="input-group-text" for="viewMAIA">MAIA</label>
+						</div>
+						<input class="form-control" id="viewMAIA" type="text" placeholder="MAIA address. Used in POST">
+					</div>
+
+					<div class="input-group mb-1">
+						<div class="input-group-prepend">
+							<label class="input-group-text" for="viewField">Field</label>
+						</div>
+						<input class="form-control" id="viewField" type="text" placeholder="Field to associate with the view. Used in POST">
+					</div>
+
+					<div class="input-group mb-1">
+						<div class="input-group-prepend">
+							<label class="input-group-text" for="viewHash">View</label>
+						</div>
+						<input class="form-control" id="viewHash" type="text" placeholder="View hash. Used in GET">
+					</div>
+				</div>
+
 			</div>
+
 		</form>
 
 		<div class="text-center mb-3 mt-3">

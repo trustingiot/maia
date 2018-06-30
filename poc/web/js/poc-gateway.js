@@ -21,7 +21,7 @@ function setFields() {
 		break
 
 	case MAIA.METHOD.POST:
-		setRequestField('address')
+		request.payload = getPayload()
 		setRequestField('seed')
 		break
 	}

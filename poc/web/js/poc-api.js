@@ -15,7 +15,7 @@ async function get() {
 		initRequest()
 		setInputValue('result', 'GET ' + request.maia + '\n\n')
 		let result = await m.get(request.maia)
-		appendInputValue('result', 'address ' + result)
+		appendInputValue('result', 'payload ' + JSON.stringify(result))
 		finishRequest()
 	}
 }
@@ -25,12 +25,13 @@ async function post() {
 	if (!notEmpty('address')) return
 
 	let m = await getMAIA()
+	let payload = getPayload()
 	if (m != null) {
 		initRequest()
-		setInputValue('result', 'POST ' + request.address + '\n')
+		setInputValue('result', 'POST ' + JSON.stringify(payload) + '\n')
 		appendInputValue('result', 'seed ' + ((request.seed == '') ? 'random' : request.seed) + '\n\n')
 	
-		let result = await m.post(request.address, (request.seed == '') ? null : request.seed)
+		let result = await m.post(payload, (request.seed == '') ? null : request.seed)
 	
 		appendInputValue('result', 'seed ' + result.state.seed + '\n')
 		appendInputValue('result', 'maia ' + result.root + '\n')

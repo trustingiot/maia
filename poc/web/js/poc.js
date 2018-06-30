@@ -1,15 +1,19 @@
 //
 // Javascript functions for PoC website
 //
-const defaultNode = 'https://iotanode.us:443'
+const defaultNode = 'https://iotanode.be:443'
 const defaultDepth = 9
 const defaultMWM = 14
-const inputs = ['address', 'maia', 'seed']
-const date = '2018.06.18'
+const defaultLayers = 3
+const defaultLayerDepth = 5
 
-let request = {address:'', seed:'', maia:''}
+const inputs = ['seed', 'maia']
+const date = '2018.06.30'
+
+let request = {seed:'', maia:''}
 let mode
 let node = null
+let selectedForm
 let instance
 
 // Return MAIA instance
@@ -31,6 +35,8 @@ async function getMAIA() {
 	if (instance != null) {
 		instance.depth = parseInt(document.getElementById('depth').value)
 		instance.mwm = parseInt(document.getElementById('mwm').value)
+		instance.channelLayers = parseInt(document.getElementById('layers').value)
+		instance.channelDepth = parseInt(document.getElementById('layerDepth').value)
 	}
 	return instance
 }
@@ -41,7 +47,20 @@ function setMode() {
 }
 
 // Execute an action
-async function execute(action) {
+function execute(action) {
+	switch (selectedForm) {
+	case 'maia':
+		executeActionMaia(action)
+		break
+
+	case 'view':
+		executeActionView(action)
+		break
+	}
+}
+
+// Execute a MAIA action
+function executeActionMaia(action) {
 	switch (action) {
 	case MAIA.METHOD.GET:
 		(mode === 'gateway') ? call(MAIA.METHOD.GET) : get()
@@ -53,6 +72,44 @@ async function execute(action) {
 	}
 }
 
+// Execute a view action
+async function executeActionView(action) {
+	let m = await getMAIA()
+	switch (action) {
+	case MAIA.METHOD.GET:
+		if (m != null) {
+			initRequest()
+			let view = document.getElementById('viewHash').value
+			setInputValue('result', 'View: ' + view + '\n')
+
+			m.readView(view, (value) => {
+				appendInputValue('result', 'Value: ' + value)
+				finishRequest()
+			})
+		}
+		break
+
+	case MAIA.METHOD.POST:
+		if (m != null) {
+			initRequest()
+			let maia = document.getElementById('viewMAIA').value
+			let field = document.getElementById('viewField').value
+			setInputValue('result', 'MAIA: ' + maia + '\n')
+			appendInputValue('result', 'Field:' + field + '\n\n')
+
+			m.createView(maia, field, (error, transactions) => {
+				if (error) {
+					appendInputValue('result', 'Error: ' + error)
+				} else {
+					appendInputValue('result', 'View: ' + transactions[0].hash)
+				}
+				finishRequest()
+			})
+		}
+		break
+	}
+}
+
 // Not empty field
 function notEmpty(field) {
 	if (request[field] == '') {
@@ -60,6 +117,12 @@ function notEmpty(field) {
 		return false
 	}
 	return true
+}
+
+function getPayload() {
+	let payload = { data: {} }
+	payload.data[document.getElementById('field').value] = document.getElementById('value').value
+	return payload
 }
 
 // Set request field
@@ -77,6 +140,7 @@ function setRequestFields() {
 
 // Clean contents
 function clean() {
+	let inputs = ['seed', 'maia', 'field', 'value', 'viewHash', 'viewMAIA', 'viewField']
 	for (var i in inputs) {
 		document.getElementById(inputs[i]).value = ''
 	}
@@ -145,8 +209,11 @@ function afterLoad() {
 	document.getElementById('node').value = defaultNode
 	document.getElementById('depth').value = defaultDepth
 	document.getElementById('mwm').value = defaultMWM
+	document.getElementById('layers').value = defaultLayers
+	document.getElementById('layerDepth').value = defaultLayerDepth
 	setInfo()
 	setInputsFromParameters()
+	setForm('maia')
 	tryGet()
 }
 
@@ -172,4 +239,15 @@ function finishRequest() {
 // Loader repeat function
 function loaderRepeatFunction(event) {
 	document.getElementById('timer').innerHTML = event.elapsedTime
+}
+
+// Set active form
+function setForm(selected) {
+	selectedForm = selected
+	let opposite = (selectedForm == 'view') ? 'maia' : 'view'
+	document.getElementById('button-' + selected).className = 'btn btn-dark active disabled'
+	document.getElementById('form-' + selected).style.display = 'block'
+
+	document.getElementById('button-' + opposite).className = 'btn btn-outline-secondary'
+	document.getElementById('form-' + opposite).style.display = 'none'
 }

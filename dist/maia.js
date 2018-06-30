@@ -4,7 +4,7 @@
 class MAIA {
 
 	static get VERSION() {
-		return 2
+		return 3
 	}
 
 	static get METHOD() {
@@ -30,11 +30,15 @@ class MAIA {
 	 * obj.provider -> node
 	 * obj.depth -> depth
 	 * obj.mwm -> mwm
+	 * obj.channelLayers -> channelLayers
+	 * obj.channelDepth -> channelDepth
 	 */
 	constructor(obj) {
 		this.iota = new IOTA({provider: obj.provider})
 		this.depth = obj.depth || 9
 		this.mwm = obj.mwm || 14
+		this.channelLayers = obj.channelLayers || 3
+		this.channelDepth = obj.channelLayers || 15
 	}
 
 	/**
@@ -68,13 +72,13 @@ class MAIA {
 
 		switch (message.method) {
 		case MAIA.METHOD.GET:
-			response.address = undefined
+			response.payload = undefined
 			response.maia = message.maia
 			await this.processGET(response)
 			break
 
 		case MAIA.METHOD.POST:
-			response.address = message.address
+			response.payload = message.payload
 			response.seed = (message.seed === undefined) ? MAIA.keyGen() : message.seed
 			response.maia = undefined
 			await this.processPOST(response)
@@ -96,7 +100,7 @@ class MAIA {
 			return
 		}
 
-		message.address = await this.get(message.maia)
+		message.payload = await this.get(message.maia)
 		message.status = MAIA.RESPONSE_CODE.OK
 	}
 
@@ -104,18 +108,13 @@ class MAIA {
 	 * Process POST request
 	 */
 	async processPOST(message) {
-		if (!this.validAddress(message.address)) {
-			message.status = MAIA.RESPONSE_CODE.INVALID_ADDRESS
-			return
-		}
-
 		if (!this.validAddress(message.seed)) {
 			message.status = MAIA.RESPONSE_CODE.INVALID_SEED
 			return
 		}
 
-		let r = await this.post(message.address, message.seed)
-		message.maia = r.root
+		let r = await this.post(message.payload, message.seed)
+		message.maia = this.maia
 		message.status = MAIA.RESPONSE_CODE.OK
 	}
 
@@ -123,23 +122,194 @@ class MAIA {
 	 * Get MAIA
 	 */
 	async get(maia) {
-		let messages = await this.obtainMessages(maia)
-		return (messages.length == 0) ? null : messages[messages.length - 1]
+		let messages = null
+		let message = null
+		try {
+			do {
+				messages = await this.obtainMessages(maia)
+				message = (messages.length == 0) ? null : messages[messages.length - 1]
+				message = this.readMessage(message)
+				if (message == null || message.config === undefined) {
+					return message
+				}
+				maia = message.config.next
+			} while (true)
+		} catch(err) {
+			return null
+		}
+	}
+
+	/**
+	 * Read JSON message from MAM channel (message = {null -> null || trytes -> json})
+	 */
+	readMessage(message) {
+		let result = null
+		if (message != null) {
+			let text = this.iota.utils.fromTrytes(message)
+			result = JSON.parse(text)
+		}
+		return result
 	}
 
 	/**
 	 * Post MAIA
 	 */
-	async post(address, seed = null) {
+	async post(payload, seed = null) {
 		this.seed = (seed == null) ? MAIA.keyGen() : seed
 		this.maia = MAIA.generateMAIA(this.seed)
+		let result = await this.doPost(payload, seed, this.maia, null)
+		return result.message
+	}
 
-		let messages = await this.obtainMessages(this.maia)
-		this.mam = Mam.init(this.iota, this.seed)
+	async doPost(payload, seed, root, parentPayload) {
+		let channel = await this.prepareChannel(seed, root)
+		let result
+
+		// Virgin channel
+		if (channel.messages.length == 0) {
+			result = await this.postInVirginChannel(payload, seed, root, parentPayload, channel)
+
+		// Started channel
+		} else {
+			result = await this.postInStartedChannel(payload, seed, root, this.readMessage(channel.messages[0]), channel)
+		}
+
+		return result
+	}
+
+	/**
+	 * Prepare channel for publish (set mam.channel.start = #(messages) )
+	 */
+	async prepareChannel(seed, root) {
+		let result = {}
+		result.messages = await this.obtainMessages(root)
+		result.mam = Mam.init(this.iota, seed)
 		// FIXME Bug in MAM @see obtainMessages
-		this.mam.channel.start = messages.length
+		result.mam.channel.start = result.messages.length
+		return result
+	}
 
-		return await this.publish(address)
+	async postInVirginChannel(payload, seed, root, parentPayload, channel) {
+		let config = parentPayload
+		let result = { pulished: true, payload: {}, message: null }
+		let index = { config: { next: null } }
+		let aux
+
+		do {
+			channel.mam.start = 0
+			config = this.generateConfig(config)
+			await this.publish(channel.mam, config)
+
+			if (config.config.layers > 0) {
+				aux = await this.generateSeed(seed)
+				index.config.next = root = MAIA.generateMAIA(aux)
+
+				// FIXME MAIA.generateMAIA(x) breaks the current channel
+				await Mam.init(this.iota, seed)
+				seed = aux
+				// END FIX
+
+				await this.publish(channel.mam, index)
+				channel = await this.prepareChannel(seed, index.config.next)
+			}
+		} while (config.config.layers > 0)
+
+		result.payload.data = this.prepareData(payload.data)
+		result.message = await this.publish(channel.mam, result.payload)
+		return result
+	}
+
+	/**
+	 * Generate configuration
+	 */
+	generateConfig(parent) {
+		let result = { config: {} }
+		if (parent == null) {
+			result.config.protocol = 'maia'
+			result.config.version = MAIA.VERSION
+			result.config.layers = this.channelLayers
+			result.config.depth = this.channelDepth
+		} else {
+			result.config.layers = parent.config.layers - 1
+			result.config.depth = parent.config.depth
+		}
+		return result
+	}
+
+	/**
+	 * Generate seed for MAM channel
+	 */
+	async generateSeed(seed, index = 0) {
+		let result = await this.hash(seed + this.iota.utils.toTrytes(index.toString()))
+		return result
+	}
+
+	/**
+	 * Prepare data
+	 */
+	prepareData(current, previous = undefined) {
+		let result
+
+		// Remove empty
+		if (previous === undefined) {
+			result = {}
+			for (var key in current) {
+				if (current[key] != '') {
+					result[key] = current[key]
+				}
+			}
+
+		// Copy old values and remove empty ones
+		} else {
+			result = previous
+			for (var key in current) {
+				if (current[key] == '') {
+					delete result[key]
+				} else {
+					result[key] = current[key]
+				}
+			}
+		}
+
+		return result
+	}
+
+	async postInStartedChannel(payload, seed, root, parentPayload, channel) {
+
+		// Last node in channel
+		let config = this.readMessage(channel.messages[0])
+		let last = this.readMessage(channel.messages[channel.messages.length - 1])
+		let result = { published: false, payload: {}, message: null }
+		let index = { config: { next: null } }
+
+		// Intermediate node
+		if (last.config !== undefined) {
+			let aux = await this.generateSeed(seed, channel.messages.length - 2)
+			result = await this.doPost(payload, aux, last.config.next)
+			if (!result.published) {
+				if (result.published = ((config.config.protocol !== undefined) || (channel.messages.length < config.config.depth + 1))) {
+					let channelSeed = await this.generateSeed(seed, channel.messages.length - 1)
+					index.config.next = MAIA.generateMAIA(channelSeed)
+
+					// FIXME MAIA.generateMAIA(x) breaks the current channel
+					await Mam.init(this.iota, seed)
+					// END FIX
+
+					channel.mam.start = channel.messages.length
+					await this.publish(channel.mam, index)
+
+					result = await this.doPost(result.payload, channelSeed, index.config.next, config)
+				}
+			}
+
+		// Final node
+		} else {
+			result.payload.data = this.prepareData(payload.data, last.data)
+			if (result.published = (channel.messages.length < config.config.depth + 1))
+				result.message = await this.publish(channel.mam, result.payload)
+		}
+
+		return result
 	}
 
 	/**
@@ -158,12 +328,103 @@ class MAIA {
 	}
 
 	/**
-	 * Publish address
+	 * Publish payload
 	 */
-	async publish(address) {
-		let message = Mam.create(this.mam, address)
+	async publish(mam, payload) {
+		let trytes = this.iota.utils.toTrytes(JSON.stringify(payload))
+		let message = Mam.create(mam, trytes)
 		await Mam.attach(message.payload, message.root, this.depth, this.mwm)
 		return message
+	}
+
+	/**
+	 * Hash using SHA256
+	 */
+	// TODO user curl
+	async hash(message) {
+		const hash = await MAIA.sha256(message)
+		return this.iota.utils.toTrytes(hash).substring(0,81)
+	}
+
+	/**
+	 * Validate address
+	 */
+	validAddress(address) {
+		if (!this.iota.valid.isAddress(address)) return false
+		if (address.length == 81) return true
+		return this.iota.utils.isValidChecksum(address)
+	}
+
+	/**
+	 * Create a view
+	 * 
+	 * @param maia MAIA address
+	 * @param field MAIA field
+	 * @param callback Callback function. Only used in browser
+	 */
+	async createView(maia, field, callback) {
+		const address = '999999999999999999999999999999999999999999999999999999999999999999999999MAIA9VIEW'
+
+		const payload = {maia: maia, field: field}
+		const message = this.iota.utils.toTrytes(JSON.stringify(payload))
+
+		const transfers = [{address: address, message: message, value: 0}]
+		if (isNode()) {
+			let result = await promisify(this.iota.api.sendTransfer.bind(this.iota.api))('', this.depth, this.mwm, transfers)
+			return result[0].hash
+
+		} else {
+			// TODO promisify browser execution
+			this.iota.api.sendTransfer('', this.depth, this.mwm, transfers, callback)
+		}
+	}
+
+	/**
+	 * Read a view
+	 *
+	 * @param view View hash
+	 * @param callback Callback function. Only used in browser
+	 */
+	async readView(view, callback) {
+		if (isNode()) {
+			let result = await promisify(this.iota.api.getTransactionsObjects.bind(this.iota.api))([view])
+			let content = await this.extractView(result)
+			return content
+
+		} else {
+			// TODO promisify browser execution
+			this.iota.api.getTransactionsObjects([view], async (error, bundle) => {
+				if (error) {
+					return error
+
+				} else {
+					let result = await this.extractView(bundle)
+					if (typeof callback === 'function') {
+						return callback(result)
+					}
+					return undefined
+				}
+			})
+		}
+	}
+
+	/**
+	 * Extract content from view
+	 * 
+	 * @param bundle View bundle
+	 */
+	async extractView(bundle) {
+		let message = this.iota.utils.extractJson(bundle)
+		if (message != null) {
+			message = JSON.parse(message)
+			if (message.maia !== undefined && message.field !== undefined) {
+				let payload = await this.get(message.maia)
+				if (payload != null && payload.data !== undefined) {
+					return payload.data[message.field]
+				}
+			}
+		}
+		return undefined
 	}
 
 	/**
@@ -177,6 +438,22 @@ class MAIA {
 			result[i] = charset[values[i] % charset.length]
 		}
 		return result.join('')
+	}
+
+	/**
+	 * Generate SHA-256 hash
+	 */
+	static async sha256(message) {
+		if (isNode()) {
+			return crypto.createHash('sha256').update(message).digest('hex')
+
+		} else {
+			// https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest
+			const msgBuffer = new TextEncoder('utf-8').encode(message)
+			const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+			const hashArray = Array.from(new Uint8Array(hashBuffer))
+			return hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('')
+		}
 	}
 
 	/**
@@ -200,15 +477,6 @@ class MAIA {
 	static generateMAIA(seed) {
 		return Mam.create(Mam.init(iotaWrapper, seed), '').root
 	}
-
-	/**
-	 * Validate address
-	 */
-	validAddress(address) {
-		if (!this.iota.valid.isAddress(address)) return false
-		if (address.length == 81) return true
-		return this.iota.utils.isValidChecksum(address)
-	}
 }
 
 function isNode() {
@@ -217,6 +485,7 @@ function isNode() {
 
 // Backend
 if (isNode()) {
+	var {promisify} = require('util')
 	var crypto = require('crypto')
 	var IOTA = require('iota.lib.js')
 	var Mam = require('../lib/mam.node.js')
