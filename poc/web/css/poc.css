@@ -1,0 +1,71 @@
+/* Css for PoC website */
+.jumbotron {
+	/* https://uigradients.com/#Anwar */
+	background: #334d50;
+	background: -webkit-linear-gradient(to right, #cbcaa5, #334d50);
+	background: linear-gradient(to right, #cbcaa5, #334d50);
+	color: #fff;
+	border-radius: 0 !important;
+}
+
+.input-group-text {
+	min-width: 110px;
+	text-align: left
+}
+
+.navbar {
+	background: #334d50 !important;
+}
+
+.nav-link {
+	padding: .5rem 1.2rem !important;
+}
+
+#result {
+	padding-left: 5px;
+	font-size: 85%;
+	width: 100%;
+	background-color: #334d50;
+	color: #fff;
+	height: 300px;
+	transition: opacity .5s ease-in-out;
+	-moz-transition: opacity .5s ease-in-out;
+	-webkit-transition: opacity .5s ease-in-out;
+}
+
+#loader {
+	display: none;
+	position: relative;
+	top: -225px;
+	margin-left: auto;
+	margin-right: auto;
+	border: 10px solid #475d5b;
+	border-radius: 50%;
+	border-top: 10px solid #cbcaa5;
+	width: 150px;
+	height: 150px;
+	-webkit-animation: spin 1s linear infinite;
+	animation: spin 1s linear infinite;
+}
+
+#timer {
+	display: none;
+	color: #475d5b;
+	font-weight: bold;
+	position: relative;
+	margin-left: auto;
+	margin-right: auto;
+	top: -314px;
+	text-align: center;
+	wigth: 100%;
+}
+
+@-webkit-keyframes spin {
+	0% { -webkit-transform: rotate(0deg); }
+	100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
