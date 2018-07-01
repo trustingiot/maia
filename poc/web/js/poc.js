@@ -8,7 +8,7 @@ const defaultLayers = 3
 const defaultLayerDepth = 5
 
 const inputs = ['seed', 'maia']
-const date = '2018.06.30'
+const date = '2018.07.01'
 
 let request = {seed:'', maia:''}
 let mode

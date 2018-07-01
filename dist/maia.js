@@ -363,7 +363,7 @@ class MAIA {
 	 * @param callback Callback function. Only used in browser
 	 */
 	async createView(maia, field, callback) {
-		const address = '999999999999999999999999999999999999999999999999999999999999999999999999MAIA9VIEW'
+		const address = MAIA.keyGen()
 
 		const payload = {maia: maia, field: field}
 		const message = this.iota.utils.toTrytes(JSON.stringify(payload))
@@ -448,11 +448,10 @@ class MAIA {
 			return crypto.createHash('sha256').update(message).digest('hex')
 
 		} else {
-			// https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest
-			const msgBuffer = new TextEncoder('utf-8').encode(message)
-			const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
-			const hashArray = Array.from(new Uint8Array(hashBuffer))
-			return hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('')
+			// https://github.com/digitalbazaar/forge
+			var md = forge.md.sha256.create()
+			md.update(message)
+			return md.digest().toHex()
 		}
 	}
 
