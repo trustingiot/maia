@@ -8,7 +8,7 @@ const defaultLayers = 3
 const defaultLayerDepth = 5
 
 const inputs = ['seed', 'maia']
-const date = '2018.07.01'
+const date = '2018.07.07'
 
 let request = {seed:'', maia:''}
 let mode
@@ -75,17 +75,16 @@ function executeActionMaia(action) {
 // Execute a view action
 async function executeActionView(action) {
 	let m = await getMAIA()
+	let value = undefined
 	switch (action) {
 	case MAIA.METHOD.GET:
 		if (m != null) {
 			initRequest()
 			let view = document.getElementById('viewHash').value
 			setInputValue('result', 'View: ' + view + '\n')
-
-			m.readView(view, (value) => {
-				appendInputValue('result', 'Value: ' + value)
-				finishRequest()
-			})
+			value = await m.readView(view)
+			appendInputValue('result', 'Value: ' + value)
+			finishRequest()
 		}
 		break
 
@@ -96,15 +95,9 @@ async function executeActionView(action) {
 			let field = document.getElementById('viewField').value
 			setInputValue('result', 'MAIA: ' + maia + '\n')
 			appendInputValue('result', 'Field:' + field + '\n\n')
-
-			m.createView(maia, field, (error, transactions) => {
-				if (error) {
-					appendInputValue('result', 'Error: ' + error)
-				} else {
-					appendInputValue('result', 'View: ' + transactions[0].hash)
-				}
-				finishRequest()
-			})
+			value = await m.createView(maia, field)
+			appendInputValue('result', 'View: ' + value)
+			finishRequest()
 		}
 		break
 	}

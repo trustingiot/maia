@@ -250,7 +250,7 @@ async function testViews() {
 async function test() {
 	if (doAPITest) await testAPI()
 	if (doGatewayTest) await testGateway()
-	if (doViewTest()) await testViews()
+	if (doViewTest) await testViews()
 }
 
 test()

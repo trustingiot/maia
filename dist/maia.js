@@ -360,52 +360,28 @@ class MAIA {
 	 * 
 	 * @param maia MAIA address
 	 * @param field MAIA field
-	 * @param callback Callback function. Only used in browser
 	 */
-	async createView(maia, field, callback) {
+	async createView(maia, field) {
 		const address = MAIA.keyGen()
 
 		const payload = {maia: maia, field: field}
 		const message = this.iota.utils.toTrytes(JSON.stringify(payload))
 
-		const transfers = [{address: address, message: message, value: 0}]
-		if (isNode()) {
-			let result = await promisify(this.iota.api.sendTransfer.bind(this.iota.api))('', this.depth, this.mwm, transfers)
-			return result[0].hash
-
-		} else {
-			// TODO promisify browser execution
-			this.iota.api.sendTransfer('', this.depth, this.mwm, transfers, callback)
-		}
+		let promise = (t) => new Promise((resolve) => this.iota.api.sendTransfer('', this.depth, this.mwm, t, (a, b) => resolve(b)))
+		let result = await promise([{address: address, message: message, value: 0}])
+		return result[0].hash
 	}
 
 	/**
 	 * Read a view
 	 *
 	 * @param view View hash
-	 * @param callback Callback function. Only used in browser
 	 */
-	async readView(view, callback) {
-		if (isNode()) {
-			let result = await promisify(this.iota.api.getTransactionsObjects.bind(this.iota.api))([view])
-			let content = await this.extractView(result)
-			return content
-
-		} else {
-			// TODO promisify browser execution
-			this.iota.api.getTransactionsObjects([view], async (error, bundle) => {
-				if (error) {
-					return error
-
-				} else {
-					let result = await this.extractView(bundle)
-					if (typeof callback === 'function') {
-						return callback(result)
-					}
-					return undefined
-				}
-			})
-		}
+	async readView(view) {
+		let promise = (h) => new Promise((resolve) => this.iota.api.getTransactionsObjects(h, (a, b) => resolve(b)))
+		let result = await promise([view])
+		let content = await this.extractView(result)
+		return content
 	}
 
 	/**
@@ -484,7 +460,6 @@ function isNode() {
 
 // Backend
 if (isNode()) {
-	var {promisify} = require('util')
 	var crypto = require('crypto')
 	var IOTA = require('iota.lib.js')
 	var Mam = require('../lib/mam.node.js')
