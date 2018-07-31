@@ -462,7 +462,7 @@ function isNode() {
 if (isNode()) {
 	var crypto = require('crypto')
 	var IOTA = require('iota.lib.js')
-	var Mam = require('../lib/mam.node.js')
+	var Mam = require('./mam.node.js')
 
 	exports.IOTA = IOTA
 	exports.Mam = Mam

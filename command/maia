@@ -1,0 +1,3 @@
+#!/bin/sh
+
+node $MAIA_PATH/maia.js $*
