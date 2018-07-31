@@ -14,7 +14,7 @@ Characteristics:
 ## Current version
 
 - Number: 3
-- Date: 2018.06.30
+- Date: 2018.07.01
 
 &nbsp;
 
@@ -104,7 +104,7 @@ Create channel (i = 1)
         twitter: 'fjestrella'
     }
     
-    <<< {status: MAIA.RESPONSE_CODE.OK: maia: A}
+    <<< {status: MAIA.RESPONSE_CODE.OK, maia: A}
     
     >>> GET(maia: A)
     <<< {address: 'AAA', twitter: 'fjestrella'}
@@ -121,7 +121,7 @@ Update field 'twitter' (i = 2)
         twitter: 'trustingiot'
     }
     
-    <<< {status: MAIA.RESPONSE_CODE.OK: maia: A}
+    <<< {status: MAIA.RESPONSE_CODE.OK, maia: A}
     
     >>> GET(MAIA: A)
     <<< {address: 'AAA', twitter: 'trustingiot'}
@@ -139,7 +139,7 @@ Add field 'other' (i = 3)
         other: 'example'
     }
     
-    <<< {status: MAIA.RESPONSE_CODE.OK: maia: A}
+    <<< {status: MAIA.RESPONSE_CODE.OK, maia: A}
     
     >>> GET(maia: A)
     <<< {address: 'AAA', twitter: 'trustingiot', other:'example'}
@@ -156,7 +156,7 @@ Remove field 'twitter' (i = 4)
         other: 'example'
     }
     
-    <<< {status: MAIA.RESPONSE_CODE.OK: maia: A}
+    <<< {status: MAIA.RESPONSE_CODE.OK, maia: A}
     
     >>> GET(maia: A)
     <<< {address: 'AAA', other:'example'}
@@ -184,7 +184,7 @@ Remove field 'other' (i = 5)
         address: 'AAA'
     }
     
-    <<< {status: MAIA.RESPONSE_CODE.OK: maia: A}
+    <<< {status: MAIA.RESPONSE_CODE.OK, maia: A}
     
     >>> GET(maia: A)
     <<< {address: 'AAA'}
@@ -216,7 +216,7 @@ Methods:
 Create a MAIA address
 
     >>> POST(seed: x, data:{address:'my address', other:'example'})
-    <<< {status: MAIA.RESPONSE_CODE.OK: maia: A}
+    <<< {status: MAIA.RESPONSE_CODE.OK, maia: A}
     
     >>> GET(maia: A)
     <<< {address:'my address', other:'example'}
@@ -232,7 +232,7 @@ Create a view
 Update the MAIA address
 
     >>> POST(seed: x, data:{address:'my new address'})
-    <<< {status: MAIA.RESPONSE_CODE.OK: maia: A}
+    <<< {status: MAIA.RESPONSE_CODE.OK, maia: A}
     
     >>> readView(view: B)
     <<< 'my new address'
